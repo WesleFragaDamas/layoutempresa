@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titulo %}Sistema de Layout{% endblock %}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+            /* Adiciona padding no final do body para compensar a altura do rodapé */
+            padding-bottom: 60px; /* Ajuste este valor se a altura do rodapé mudar */
+        }
+        header {
+            background-color: #333;
+            color: white;
+            padding: 1em 0;
+            text-align: center;
+        }
+        nav {
+            background-color: #444;
+            padding: 0.5em;
+            text-align: center;
+            position: sticky; /* Faz o menu grudar no topo ao rolar */
+            top: 0;
+            z-index: 99; /* Para ficar acima de outros elementos ao rolar */
+        }
+        nav a {
+            color: white;
+            margin: 0 15px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        .container {
+            width: 90%;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            min-height: calc(100vh - 180px); /* Tenta fazer o container ocupar mais altura, ajuste os 180px (header+nav+footer+margins) */
+        }
+        .user-info {
+            float: right;
+            margin-right: 20px;
+            color: #ccc;
+            font-size: 0.9em;
+        }
+        .user-info a { /* Estilo específico para o link de Sair dentro do user-info */
+            color: #FFD700; /* Dourado para destaque */
+            text-decoration: none;
+        }
+        .user-info a:hover {
+            text-decoration: underline;
+        }
+        footer {
+            text-align: center;
+            padding: 1em 0;
+            background-color: #333;
+            color: white;
+            position: fixed;
+            bottom: 0;
+            left: 0; /* Garante que ocupe a largura toda */
+            width: 100%;
+            height: 40px; /* Defina uma altura para o rodapé, ajuste o padding-bottom do body acima */
+            z-index: 100; /* Para garantir que fique acima de outros elementos, se necessário */
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <header>
+        <h1>Sistema de Gerenciamento de Layout e Inventário</h1>
+    </header>
+    <nav>
+        <a href="{% url 'maquinas:layout_empresa' %}">Layout Principal</a>
+        {% if user.is_authenticated %}
+            {% if user.is_staff %}
+                <a href="{% url 'admin:index' %}">Admin Django</a>
+            {% endif %}
+            <span class="user-info">Olá, {{ user.username }}! (<a href="{% url 'logout' %}?next={% url 'login' %}">Sair</a>)</span>
+        {% else %}
+            <a href="{% url 'login' %}?next={% url 'maquinas:layout_empresa' %}">Login</a>
+        {% endif %}
+    </nav>
+
+    <div class="container">
+        {% block conteudo %}
+        <!-- O conteúdo específico da página será inserido aqui -->
+        {% endblock %}
+    </div>
+
+    <footer>
+        <p style="margin: 0.5em 0;">© {% now "Y" %} Sua Empresa. Todos os direitos reservados.</p>
+    </footer>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
