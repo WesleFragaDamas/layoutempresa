@@ -1,5 +1,10 @@
+# maquinas/filters.py
 import django_filters
-from .models import PlantaLayout, MaquinaFisica
+from .models import PlantaLayout, MaquinaFisica, Chamado # Adicionado Chamado
+from django.contrib.auth import get_user_model # Para filtrar por usuário
+
+User = get_user_model()
+
 
 class PlantaLayoutFilter(django_filters.FilterSet):
     nome = django_filters.CharFilter(lookup_expr='icontains', label='Nome da Planta')
@@ -26,3 +31,14 @@ class MaquinaFisicaFilter(django_filters.FilterSet):
         # Lista os campos que você quer que o django-filter crie filtros automaticamente
         # ou os que você definiu explicitamente acima.
         fields = ['nome_patrimonio', 'planta_layout', 'tipo_equipamento', 'setor']
+
+class ChamadoFilter(django_filters.FilterSet):
+    titulo = django_filters.CharFilter(lookup_expr='icontains', label='Título Contém')
+    maquina_fisica__nome_patrimonio = django_filters.CharFilter(lookup_expr='icontains', label='Patrimônio da Máquina')
+    status = django_filters.ChoiceFilter(choices=Chamado.StatusChamado.choices, label='Status')
+    responsavel_atendimento = django_filters.ModelChoiceFilter(queryset=User.objects.filter(is_staff=True), label='Responsável TI') # Filtra por usuários que são staff
+    # Poderia adicionar filtro por data de abertura (DateFromToRangeFilter)
+
+    class Meta:
+        model = Chamado
+        fields = ['titulo', 'maquina_fisica__nome_patrimonio', 'status', 'responsavel_atendimento']

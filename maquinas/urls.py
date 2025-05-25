@@ -9,6 +9,8 @@ from .views import ( # Importa as Class-Based Views especificamente
     MaquinaFisicaCreateView,
     MaquinaFisicaUpdateView,
     MaquinaFisicaDeleteView,
+    ChamadoListView,
+    ChamadoUpdateView,
 )
 
 app_name = 'maquinas'
@@ -33,5 +35,9 @@ urlpatterns = [
 
     # URLs Criar chamados
     path('chamado/criar/', views.criar_chamado_ajax, name='chamado_criar'),
+
+    # URLs Listade chamados
+    path('chamados/', ChamadoListView.as_view(), name='chamado_list'),
+    path('chamado/<int:pk>/editar/', ChamadoUpdateView.as_view(), name='chamado_edit'),
 
 ]

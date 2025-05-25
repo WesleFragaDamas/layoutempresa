@@ -51,6 +51,7 @@
             <li><a href="{% url 'maquinas:layout_empresa_padrao' %}" class="{% if request.resolver_match.url_name == 'layout_empresa_padrao' or request.resolver_match.url_name == 'layout_empresa_especifica' %}active{% endif %}">Visualizar Layouts</a></li>
             <li><a href="{% url 'maquinas:plantalayout_list' %}" class="{% if 'plantalayout' in request.resolver_match.url_name %}active{% endif %}">Gerenciar Plantas</a></li>
             <li><a href="{% url 'maquinas:maquinafisica_list' %}" class="{% if 'maquinafisica' in request.resolver_match.url_name %}active{% endif %}">Gerenciar Máquinas</a></li>
+             <li><a href="{% url 'maquinas:chamado_list' %}" class="{% if 'chamado' in request.resolver_match.url_name %}active{% endif %}">Gerenciar Chamados</a></li> {# NOVO LINK #}
             {% if user.is_staff %}
             <li><a href="{% url 'admin:index' %}">Admin Django</a></li>
             {% endif %}

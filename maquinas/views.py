@@ -6,10 +6,13 @@ from django.views.decorators.http import require_POST
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 import json
+from django.utils import timezone
+from django.db import models # <--- ADICIONE ESTA LINHA DE IMPORTAÇÃO
 
+# Suas importações de .models e .forms
 from .models import MaquinaFisica, PlantaLayout, ConfiguracaoRede, Chamado
-from .forms import PlantaLayoutForm, MaquinaFisicaForm
-from .filters import PlantaLayoutFilter, MaquinaFisicaFilter # NOVA IMPORTAÇÃO
+from .forms import PlantaLayoutForm, MaquinaFisicaForm, ChamadoForm # Adicionado ChamadoForm
+from .filters import PlantaLayoutFilter, MaquinaFisicaFilter, ChamadoFilter
 
 # View existente para exibir o layout
 @login_required
@@ -106,9 +109,11 @@ class PlantaLayoutListView(LoginRequiredMixin, ListView):
 class PlantaLayoutCreateView(LoginRequiredMixin, CreateView): # ... (sem alterações) ...
     model = PlantaLayout; form_class = PlantaLayoutForm; template_name = 'maquinas/plantalayout_form.html'; success_url = reverse_lazy('maquinas:plantalayout_list')
     def get_context_data(self, **kwargs): context = super().get_context_data(**kwargs); context['titulo_formulario'] = 'Adicionar Nova Planta de Layout'; return context
+
 class PlantaLayoutUpdateView(LoginRequiredMixin, UpdateView): # ... (sem alterações) ...
     model = PlantaLayout; form_class = PlantaLayoutForm; template_name = 'maquinas/plantalayout_form.html'; success_url = reverse_lazy('maquinas:plantalayout_list')
     def get_context_data(self, **kwargs): context = super().get_context_data(**kwargs); context['titulo_formulario'] = 'Editar Planta de Layout'; return context
+
 class PlantaLayoutDeleteView(LoginRequiredMixin, DeleteView): # ... (sem alterações) ...
     model = PlantaLayout; template_name = 'maquinas/plantalayout_confirm_delete.html'; success_url = reverse_lazy('maquinas:plantalayout_list')
     def get_context_data(self, **kwargs): context = super().get_context_data(**kwargs); context['titulo_pagina'] = 'Confirmar Exclusão de Planta'; return context
@@ -141,3 +146,61 @@ class MaquinaFisicaDeleteView(LoginRequiredMixin, DeleteView): # ... (sem altera
     model = MaquinaFisica; template_name = 'maquinas/maquinafisica_confirm_delete.html'; success_url = reverse_lazy('maquinas:maquinafisica_list')
     def get_context_data(self, **kwargs): context = super().get_context_data(**kwargs); context['titulo_pagina'] = 'Confirmar Exclusão de Máquina'; return context
 
+# --- VIEWS PARA CRUD DE CHAMADO ---
+class ChamadoListView(LoginRequiredMixin, ListView):
+    model = Chamado
+    template_name = 'maquinas/chamado_list.html'
+    context_object_name = 'chamados'
+    paginate_by = 15 # Mostrar mais chamados por página
+
+    def get_queryset(self):
+        # Ordenar por status (ex: abertos primeiro) e depois por data de abertura
+        queryset = super().get_queryset().select_related(
+            'maquina_fisica',
+            'maquina_fisica__planta_layout', # Para mostrar a planta da máquina
+            'usuario_reportou',
+            'responsavel_atendimento'
+        ).order_by(
+            # Ordena para que 'ABERTO' e 'EM_ANDAMENTO' venham primeiro
+            models.Case(
+                models.When(status=Chamado.StatusChamado.ABERTO, then=models.Value(0)),
+                models.When(status=Chamado.StatusChamado.EM_ANDAMENTO, then=models.Value(1)),
+                models.When(status=Chamado.StatusChamado.AGUARDANDO_PECA, then=models.Value(2)),
+                models.When(status=Chamado.StatusChamado.AGUARDANDO_TERCEIRO, then=models.Value(3)),
+                default=models.Value(4) # Outros status depois
+            ),
+            '-data_abertura' # Chamados mais recentes primeiro dentro de cada grupo de status
+        )
+        self.filterset = ChamadoFilter(self.request.GET, queryset=queryset)
+        return self.filterset.qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['filter'] = self.filterset
+        context['titulo_pagina'] = 'Gerenciar Chamados / Incidentes'
+        return context
+
+class ChamadoUpdateView(LoginRequiredMixin, UpdateView):
+    model = Chamado
+    form_class = ChamadoForm # Usa o novo formulário
+    template_name = 'maquinas/chamado_form.html' # Template para o formulário de edição
+    success_url = reverse_lazy('maquinas:chamado_list') # Para onde ir após sucesso
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['titulo_formulario'] = f'Editar Chamado #{self.object.pk}: {self.object.titulo}'
+        # Passa o objeto chamado para o template, caso precise de mais informações dele
+        context['chamado'] = self.object
+        return context
+
+    def form_valid(self, form):
+        # Lógica customizada antes de salvar, se necessário
+        # Ex: Atualizar data_fechamento se status mudar para Resolvido/Fechado
+        chamado = form.save(commit=False) # Pega o objeto sem salvar no banco ainda
+        if chamado.status in [Chamado.StatusChamado.RESOLVIDO, Chamado.StatusChamado.FECHADO]:
+            if not chamado.data_fechamento:
+                chamado.data_fechamento = timezone.now()
+        else: # Se for reaberto, limpa a data de fechamento
+            chamado.data_fechamento = None
+        chamado.save() # Salva as alterações
+        return super().form_valid(form) # Continua o fluxo normal de sucesso

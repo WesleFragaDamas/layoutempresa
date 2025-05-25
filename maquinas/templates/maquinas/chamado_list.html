@@ -1,0 +1,61 @@
+{% extends "maquinas/base.html" %}
+{% load crispy_forms_tags %} {# Ou remova #}
+
+{% block pagina_titulo %}{{ titulo_pagina|default:"Gerenciar Chamados" }}{% endblock %}
+
+{% block conteudo %}
+<div class="controls-bar" style="margin-bottom: 20px;">
+    <form method="get" class="form-inline"> {# Usar form-inline para melhor layout com crispy se usar bootstrap #}
+        {# {{ filter.form|crispy }} #}
+        {{ filter.form.as_p }}
+        <button type="submit" class="btn btn-info btn-sm" style="padding: 5px 10px; background-color: #5bc0de; color: white; border: none; border-radius: 4px; margin-left:10px;">Filtrar</button>
+        <a href="{% url 'maquinas:chamado_list' %}" class="btn btn-secondary btn-sm" style="margin-left: 10px; color: #6c757d; text-decoration:none; padding: 5px 10px; border: 1px solid #ccc; border-radius:4px;">Limpar Filtros</a>
+    </form>
+    {# Botão de Adicionar Chamado pode ser colocado aqui se formos criar uma CreateView para Chamado no futuro #}
+    {# <a href="{% url 'maquinas:chamado_add' %}" class="btn btn-primary" style="float:right;">Novo Chamado</a> #}
+</div>
+
+{% if chamados %}
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">ID</th>
+                <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Título</th>
+                <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Máquina (Planta)</th>
+                <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Status</th>
+                <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Reportado Por</th>
+                <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Responsável TI</th>
+                <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Aberto Em</th>
+                <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for chamado in chamados %}
+            <tr>
+                <td style="padding: 8px; border: 1px solid #ddd;">{{ chamado.id }}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">{{ chamado.titulo|truncatechars:50 }}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">
+                    {{ chamado.maquina_fisica.nome_patrimonio }}
+                    <small style="display:block; color:grey;">({{ chamado.maquina_fisica.planta_layout.nome|default:"N/A" }})</small>
+                </td>
+                <td style="padding: 8px; border: 1px solid #ddd;">{{ chamado.get_status_display }}</td> {# Mostra o label legível do status #}
+                <td style="padding: 8px; border: 1px solid #ddd;">{{ chamado.usuario_reportou.username|default:"Sistema" }}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">{{ chamado.responsavel_atendimento.username|default:"-" }}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">{{ chamado.data_abertura|date:"d/m/Y H:i" }}</td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+                    {# Link para editar (precisaremos criar a UpdateView e URL para Chamado) #}
+                    <a href="{% url 'maquinas:chamado_edit' pk=chamado.pk %}" style="color: #007bff; text-decoration:none; margin-right:10px;">Ver/Editar</a>
+                    {# Poderia ter um link para admin por enquanto #}
+                    {# <a href="{% url 'admin:maquinas_chamado_change' chamado.id %}" target="_blank">Admin</a> #}
+                </td>
+
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if is_paginated %}
+        {# ... (código da paginação igual ao anterior) ... #}
+    {% endif %}
+{% else %}
+    <p>Nenhum chamado encontrado com os filtros aplicados. <a href="{% url 'maquinas:chamado_list' %}">Limpar Filtros</a></p>
+{% endif %}
+{% endblock %}
