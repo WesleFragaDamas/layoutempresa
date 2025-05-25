@@ -5,99 +5,88 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block titulo %}Sistema de Layout{% endblock %}</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-            color: #333;
-            /* Adiciona padding no final do body para compensar a altura do rodapé */
-            padding-bottom: 60px; /* Ajuste este valor se a altura do rodapé mudar */
-        }
-        header {
-            background-color: #333;
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; color: #333; display: flex; min-height: 100vh; flex-direction: column; }
+        .sidebar { width: 220px; background-color: #2c3e50; color: white; padding-top: 0; /* Removido padding-top para o logo ficar mais no topo */ height: 100vh; position: fixed; left: 0; top: 0; overflow-y: auto; }
+        .sidebar .logo { text-align: center; padding: 15px 0; font-size: 1.6em; /* Aumentado um pouco */ font-weight: bold; background-color: #34495e; /* Cor de destaque para o logo */ margin-bottom: 10px; }
+        .sidebar .logo a { color: white; text-decoration: none; }
+        .sidebar ul { list-style-type: none; padding: 0; margin: 0; }
+        .sidebar ul li a { display: block; color: #bdc3c7; padding: 12px 20px; text-decoration: none; font-size: 0.95em; border-left: 3px solid transparent; transition: background-color 0.2s, border-left 0.2s, color 0.2s; }
+        .sidebar ul li a:hover, .sidebar ul li a.active { background-color: #34495e; color: white; border-left: 3px solid #3498db; }
+
+        .main-content-area { margin-left: 220px; flex-grow: 1; padding: 0; display: flex; flex-direction: column; width: calc(100% - 220px); }
+
+        /* --- MODIFICAÇÃO NO TOPBAR (HEADER + NAV COMBINADOS) --- */
+        .topbar {
+            background-color: #333; /* Cor escura para a barra unificada */
             color: white;
-            padding: 1em 0;
-            text-align: center;
+            padding: 0 20px; /* Padding lateral */
+            height: 50px; /* Altura fixa para a topbar */
+            display: flex;
+            justify-content: space-between; /* Título à esquerda, usuário à direita */
+            align-items: center;
+            border-bottom: 2px solid #222; /* Uma pequena borda inferior */
         }
-        nav {
-            background-color: #444;
-            padding: 0.5em;
-            text-align: center;
-            position: sticky; /* Faz o menu grudar no topo ao rolar */
-            top: 0;
-            z-index: 99; /* Para ficar acima de outros elementos ao rolar */
-        }
-        nav a {
-            color: white;
-            margin: 0 15px;
-            text-decoration: none;
+        .topbar .page-title {
+            font-size: 1.2em;
             font-weight: bold;
         }
-        nav a:hover {
-            text-decoration: underline;
-        }
-        .container {
-            width: 90%;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: white;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            min-height: calc(100vh - 180px); /* Tenta fazer o container ocupar mais altura, ajuste os 180px (header+nav+footer+margins) */
-        }
-        .user-info {
-            float: right;
-            margin-right: 20px;
-            color: #ccc;
+        .topbar .user-info {
             font-size: 0.9em;
         }
-        .user-info a { /* Estilo específico para o link de Sair dentro do user-info */
-            color: #FFD700; /* Dourado para destaque */
-            text-decoration: none;
-        }
-        .user-info a:hover {
-            text-decoration: underline;
-        }
-        footer {
-            text-align: center;
-            padding: 1em 0;
-            background-color: #333;
-            color: white;
-            position: fixed;
-            bottom: 0;
-            left: 0; /* Garante que ocupe a largura toda */
-            width: 100%;
-            height: 40px; /* Defina uma altura para o rodapé, ajuste o padding-bottom do body acima */
-            z-index: 100; /* Para garantir que fique acima de outros elementos, se necessário */
-        }
+        .topbar .user-info a { color: #FFD700; text-decoration: none; margin-left: 5px;}
+        .topbar .user-info a:hover { text-decoration: underline; }
+        /* --- FIM DA MODIFICAÇÃO NO TOPBAR --- */
+
+        .container { width: auto; margin: 20px; padding: 20px; background-color: white; box-shadow: 0 0 10px rgba(0,0,0,0.1); flex-grow: 1; }
+        footer { text-align: center; padding: 0; background-color: #333; color: white; margin-top: auto; }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-    <header>
-        <h1>Sistema de Gerenciamento de Layout e Inventário</h1>
-    </header>
-    <nav>
-        <a href="{% url 'maquinas:layout_empresa' %}">Layout Principal</a>
-        {% if user.is_authenticated %}
+    <aside class="sidebar">
+        <div class="logo">
+            <a href="{% url 'maquinas:layout_empresa_padrao' %}">LayoutSys</a>
+        </div>
+        <ul>
+            <li><a href="{% url 'maquinas:layout_empresa_padrao' %}" class="{% if request.resolver_match.url_name == 'layout_empresa_padrao' or request.resolver_match.url_name == 'layout_empresa_especifica' %}active{% endif %}">Visualizar Layouts</a></li>
+            <li><a href="{% url 'maquinas:plantalayout_list' %}" class="{% if 'plantalayout' in request.resolver_match.url_name %}active{% endif %}">Gerenciar Plantas</a></li>
+            <li><a href="{% url 'maquinas:maquinafisica_list' %}" class="{% if 'maquinafisica' in request.resolver_match.url_name %}active{% endif %}">Gerenciar Máquinas</a></li>
             {% if user.is_staff %}
-                <a href="{% url 'admin:index' %}">Admin Django</a>
+            <li><a href="{% url 'admin:index' %}">Admin Django</a></li>
             {% endif %}
-            <span class="user-info">Olá, {{ user.username }}! (<a href="{% url 'logout' %}?next={% url 'login' %}">Sair</a>)</span>
-        {% else %}
-            <a href="{% url 'login' %}?next={% url 'maquinas:layout_empresa' %}">Login</a>
-        {% endif %}
-    </nav>
+        </ul>
+    </aside>
 
-    <div class="container">
-        {% block conteudo %}
-        <!-- O conteúdo específico da página será inserido aqui -->
-        {% endblock %}
+    <div class="main-content-area">
+        {# --- NOVO TOPBAR UNIFICADO --- #}
+        <div class="topbar">
+            <div class="page-title">
+                {% block pagina_titulo %}{{ titulo_pagina|default:"Dashboard" }}{% endblock %}
+            </div>
+            <div class="user-info">
+                {% if user.is_authenticated %}
+                    Olá, {{ user.username }}!
+                    (<a href="{% url 'logout' %}?next={% url 'login' %}">Sair</a>)
+                {% else %}
+                    <a href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}">Login</a>
+                {% endif %}
+            </div>
+        </div>
+        {# --- FIM DO NOVO TOPBAR --- #}
+
+        {# O <header> e <nav> anteriores foram removidos/substituídos pelo .topbar #}
+
+        <main class="container">
+            {% block conteudo %}
+            <!-- O conteúdo específico da página será inserido aqui -->
+            {% endblock %}
+        </main>
+
+        <footer>
+            <p style="margin: 0.1em 0;">© {% now "Y" %} Sua Empresa. Todos os direitos reservados.</p>
+        </footer>
     </div>
 
-    <footer>
-        <p style="margin: 0.5em 0;">© {% now "Y" %} Sua Empresa. Todos os direitos reservados.</p>
-    </footer>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

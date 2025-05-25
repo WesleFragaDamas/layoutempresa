@@ -1,0 +1,40 @@
+{% extends "maquinas/base.html" %}
+{% load crispy_forms_tags %} {# Ou remova se não estiver usando crispy-forms #}
+
+{% block pagina_titulo %}{{ titulo_formulario|default:"Formulário de Máquina" }}{% endblock %}
+
+{% block conteudo %}
+<form method="post" enctype="multipart/form-data"> {# enctype é para o caso de ter ImageField no futuro, mas não tem
+    agora #}
+    {% csrf_token %}
+
+    {# Se usar crispy-forms: #}
+    {# {{ form|crispy }} #}
+
+    {# Se NÃO usar crispy-forms: #}
+    {{ form.as_p }}
+
+    <div style="margin-top: 20px;">
+        <button type="submit"
+                style="padding: 8px 15px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor:pointer;">
+            Salvar
+        </button>
+        <a href="{% url 'maquinas:maquinafisica_list' %}"
+           style="margin-left: 10px; color: #6c757d; text-decoration:none;">Cancelar</a>
+    </div>
+</form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('maquina-form');
+        const submitButton = document.getElementById('submit-button-maquina'); // ID diferente se necessário
+
+        if (form && submitButton) {
+            form.addEventListener('submit', function () {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Salvando...';
+            });
+        }
+    });
+</script>
+{% endblock %}

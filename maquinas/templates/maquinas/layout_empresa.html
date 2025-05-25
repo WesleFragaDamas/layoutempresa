@@ -1,92 +1,100 @@
 {% extends "maquinas/base.html" %}
+{% load static %}
 
 {% block titulo %}{{ titulo_pagina }}{% endblock %}
 
 {% block extra_head %}
-<style>
-    /* ... (Estilos do base.html são herdados) ... */
-    #area-layout-container { width: 100%; max-width: 1200px; margin: 20px auto; overflow: hidden; border: 1px dashed #ccc; position: relative; }
-    #area-layout { width: 1000px; height: 700px; border: 2px solid #666; position: relative; background-color: #e9e9e9; background-image: linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px); background-size: 20px 20px; transform-origin: 0 0; transition: transform 0.3s ease-out; cursor: grab; }
-    #area-layout.grabbing { cursor: grabbing; }
-
-    .maquina-ponto { width: 80px; height: 50px; background-color: lightblue; border: 1px solid blue; border-radius: 5px; position: absolute; cursor: pointer; /* Default cursor para clique */ display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 0.8em; padding: 5px; box-sizing: border-box; overflow: hidden; z-index: 1; }
-    /* Quando a edição do layout estiver ativa, o cursor das máquinas muda para grab */
-    #area-layout.edicao-ativa .maquina-ponto { cursor: grab; }
-    .maquina-ponto.dragging { cursor: grabbing !important; opacity: 0.7; z-index: 1000; box-shadow: 0 0 15px rgba(0,0,0,0.3); }
-    .maquina-ponto:hover:not(.dragging) { box-shadow: 0 0 10px rgba(0,0,255,0.5); z-index: 10; }
-    .maquina-ponto .nome-maquina { font-weight: bold; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;}
-    .maquina-ponto .ip-maquina { font-size: 0.9em; color: #333;}
-
-    .layout-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 5px; background-color: #f0f0f0; border-radius: 4px;}
-    .zoom-controls { /* Removido position absolute, agora parte do .layout-controls */ z-index: 20; background: rgba(255,255,255,0.8); padding: 5px; border-radius: 4px;}
-    .zoom-controls button, #toggle-edicao-layout { margin: 0 2px; padding: 5px 8px; cursor: pointer;}
-    #toggle-edicao-layout.ativo { background-color: #d9534f; color: white; border-color: #d43f3a;}
-
-
-    /* Estilos do modal (permanecem os mesmos da versão anterior) */
-    .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); }
-    .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 60%; max-width: 600px; border-radius: 8px; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19); }
-    .modal-header { padding: 10px 16px; background-color: #5cb85c; color: white; border-top-left-radius: 8px; border-top-right-radius: 8px; }
-    .modal-header h2 { margin: 0; }
-    .modal-body { padding: 15px 16px; }
-    .modal-body p { margin: 10px 0; }
-    .modal-body strong { color: #337ab7; }
-    .close-button { color: #aaa; float: right; font-size: 28px; font-weight: bold; }
-    .close-button:hover, .close-button:focus { color: black; text-decoration: none; cursor: pointer; }
-</style>
+<link rel="stylesheet" type="text/css" href="{% static 'maquinas/css/layout_visual.css' %}">
+{# <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"> #}
 {% endblock %}
 
 {% block conteudo %}
-<h2>{{ titulo_pagina }}</h2>
 
 <div class="layout-controls">
-    <button id="toggle-edicao-layout">Ativar Edição do Layout</button>
+    <div>
+        <label for="seletor-planta">Selecionar Planta:</label>
+        <select id="seletor-planta" name="planta">
+            {% for planta_opt in todas_as_plantas %}
+                <option value="{{ planta_opt.id }}" {% if planta_selecionada and planta_selecionada.id == planta_opt.id %}selected{% endif %}>
+                    {{ planta_opt.nome }}
+                </option>
+            {% endfor %}
+            {% if not todas_as_plantas %} <option value="">Nenhuma planta cadastrada</option> {% endif %}
+        </select>
+        <button id="toggle-edicao-layout">Ativar Edição do Layout</button>
+        <label for="grid-snap-toggle" style="margin-left: 15px;">Snap à Grade:</label>
+        <input type="checkbox" id="grid-snap-toggle" checked>
+    </div>
     <div class="zoom-controls">
         <button id="zoom-in">+</button>
         <button id="zoom-out">-</button>
         <button id="zoom-reset">Reset</button>
     </div>
 </div>
-<p id="status-edicao" style="text-align: center; margin-bottom:10px;">Arraste as máquinas para reposicioná-las (quando a edição estiver ativa). Clique para ver detalhes.</p>
+{# <p id="status-edicao"></p> -- Removido conforme sua solicitação, ou deixe vazio se o JS precisar do elemento #}
 
 
 <div id="area-layout-container">
-    <div id="area-layout">
-        {% for maquina in maquinas_fisicas %}
-        <div class="maquina-ponto"
-             style="left: {{ maquina.posicao_x }}px; top: {{ maquina.posicao_y }}px;"
-             data-maquina-id="{{ maquina.id }}"
-             data-nome="{{ maquina.nome_patrimonio }}"
-             data-mac="{{ maquina.mac_address|default:'N/A' }}"
-             data-tipo="{{ maquina.tipo_equipamento|default:'N/A' }}"
-             data-setor="{{ maquina.setor|default:'N/A' }}"
-             data-usuario="{{ maquina.usuario_responsavel.username|default:'N/A' }}"
-             data-obs-hw="{{ maquina.observacoes_hardware|default:''|escapejs }}"
-             data-ip="{% if maquina.config_ativa %}{{ maquina.config_ativa.ip_address }}{% else %}N/A{% endif %}"
-             data-hostname="{% if maquina.config_ativa %}{{ maquina.config_ativa.hostname_rede|default:'N/A' }}{% else %}N/A{% endif %}"
-             data-ramal="{% if maquina.config_ativa %}{{ maquina.config_ativa.ramal_telefonico|default:'N/A' }}{% else %}N/A{% endif %}"
-             data-simo="{% if maquina.config_ativa %}{{ maquina.config_ativa.codigo_simo|default:'N/A' }}{% else %}N/A{% endif %}"
-             data-login-srv="{% if maquina.config_ativa %}{{ maquina.config_ativa.login_padrao_sistema_a|default:'N/A' }}{% else %}N/A{% endif %}"
-             data-obs-cfg="{% if maquina.config_ativa %}{{ maquina.config_ativa.observacoes_config|default:''|escapejs }}{% else %}N/A{% endif %}"
-             title="Clique para ver detalhes de {{ maquina.nome_patrimonio }}">
-            <span class="nome-maquina">{{ maquina.nome_patrimonio }}</span>
-            <span class="ip-maquina">
-                {% if maquina.config_ativa %}
-                    {{ maquina.config_ativa.ip_address }}
-                {% else %}
-                    Sem IP
-                {% endif %}
-            </span>
-        </div>
-        {% endfor %}
+    <!-- Linhas Guia -->
+    <div class="guide-line horizontal-guide" id="h-guide-top"></div>
+    <div class="guide-line horizontal-guide" id="h-guide-center"></div>
+    <div class="guide-line horizontal-guide" id="h-guide-bottom"></div>
+    <div class="guide-line vertical-guide" id="v-guide-left"></div>
+    <div class="guide-line vertical-guide" id="v-guide-center"></div>
+    <div class="guide-line vertical-guide" id="v-guide-right"></div>
+
+    <div id="saving-indicator">Salvando posição...</div>
+
+    <div id="area-layout"
+         style="
+             width: {{ planta_selecionada.largura_layout|default:1000 }}px;
+             height: {{ planta_selecionada.altura_layout|default:490 }}px;
+             {% if planta_selecionada and planta_selecionada.imagem_fundo %}
+             background-image: url('{{ planta_selecionada.imagem_fundo.url }}');
+             background-repeat: no-repeat;
+             background-position: center center;
+             background-size: contain;
+             {% endif %}
+         ">
+        {% if planta_selecionada %}
+            {% for maquina in maquinas_fisicas %}
+
+                <div class="maquina-ponto tipo-{{ maquina.tipo_equipamento|slugify|default:'desconhecido' }} {% if maquina.tem_chamados_abertos %}com-alerta{% endif %}"
+                     style="left: {{ maquina.posicao_x }}px; top: {{ maquina.posicao_y }}px;"
+                     data-maquina-id="{{ maquina.id }}"
+                     data-nome="{{ maquina.nome_patrimonio }}"
+                     data-mac="{{ maquina.mac_address|default:'N/A' }}"
+                     data-tipo="{{ maquina.tipo_equipamento|default:'N/A' }}"
+                     data-setor="{{ maquina.setor|default:'N/A' }}"
+                     data-usuario="{{ maquina.usuario_responsavel.username|default:'N/A' }}"
+                     data-obs-hw="{{ maquina.observacoes_hardware|default:''|escapejs }}"
+                     data-ip="{% if maquina.config_ativa %}{{ maquina.config_ativa.ip_address }}{% else %}N/A{% endif %}"
+                     data-hostname="{% if maquina.config_ativa %}{{ maquina.config_ativa.hostname_rede|default:'N/A' }}{% else %}N/A{% endif %}"
+                     data-ramal="{% if maquina.config_ativa %}{{ maquina.config_ativa.ramal_telefonico|default:'N/A' }}{% else %}N/A{% endif %}"
+                     data-simo="{% if maquina.config_ativa %}{{ maquina.config_ativa.codigo_simo|default:'N/A' }}{% else %}N/A{% endif %}"
+                     data-login-srv="{% if maquina.config_ativa %}{{ maquina.config_ativa.login_padrao_sistema_a|default:'N/A' }}{% else %}N/A{% endif %}"
+                     data-obs-cfg="{% if maquina.config_ativa %}{{ maquina.config_ativa.observacoes_config|default:''|escapejs }}{% else %}N/A{% endif %}"
+                     title="Clique para ver detalhes de {{ maquina.nome_patrimonio }}">
+                    <span class="nome-maquina">{{ maquina.nome_patrimonio }}</span>
+                    <span class="ip-maquina">
+                        {% if maquina.config_ativa %}{{ maquina.config_ativa.ip_address }}{% else %}Sem IP{% endif %}
+                    </span>
+                    {% if maquina.tem_chamados_abertos %}
+                        <span class="alerta-icone" title="Esta máquina possui chamados abertos!">⚠</span>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p style="text-align:center; padding-top: 50px;">Nenhuma planta selecionada ou cadastrada.</p>
+        {% endif %}
     </div>
 </div>
 
-<!-- Modal para exibir detalhes (HTML permanece o mesmo da versão anterior) -->
+<!-- Modal de Detalhes da Máquina -->
 <div id="detalhesModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <span class="close-button" >×</span>
+            <span class="close-button" id="close-detalhes-modal">×</span>
             <h2 id="modalNomeMaquina">Detalhes da Máquina</h2>
         </div>
         <div class="modal-body">
@@ -96,8 +104,7 @@
             <p><strong>Setor:</strong> <span id="modalSetor"></span></p>
             <p><strong>Usuário Resp.:</strong> <span id="modalUsuario"></span></p>
             <p><strong>Obs. Hardware:</strong> <pre id="modalObsHw" style="white-space: pre-wrap; word-wrap: break-word;"></pre></p>
-            <hr>
-            <h4>Configuração de Rede Ativa:</h4>
+            <hr><h4>Configuração de Rede Ativa:</h4>
             <p><strong>IP Address:</strong> <span id="modalIp"></span></p>
             <p><strong>Hostname Rede:</strong> <span id="modalHostname"></span></p>
             <p><strong>Ramal:</strong> <span id="modalRamal"></span></p>
@@ -105,151 +112,49 @@
             <p><strong>Login Servidor:</strong> <span id="modalLoginSrv"></span></p>
             <p><strong>Obs. Config.:</strong> <pre id="modalObsCfg" style="white-space: pre-wrap; word-wrap: break-word;"></pre></p>
         </div>
+        <div class="modal-footer">
+            <button id="btn-reportar-problema" style="background-color: #f0ad4e; color:white; padding: 8px 12px; border:none; border-radius:4px; cursor:pointer;">Reportar Problema</button>
+            <button type="button" class="close-detalhes-modal-btn" style="margin-left:10px; padding: 8px 12px; cursor:pointer;">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Reportar Problema -->
+<div id="reportarProblemaModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header" style="background-color: #f0ad4e;">
+            <span class="close-button" id="close-reportar-modal">×</span>
+            <h2>Reportar Problema para <span id="reportarMaquinaNome"></span></h2>
+        </div>
+        <form id="form-reportar-problema">
+            {# {% csrf_token %}  Não é necessário aqui, o token CSRF é enviado via JS headers #}
+            <input type="hidden" id="reportarMaquinaId" name="maquina_id">
+            <div class="modal-body">
+                <div style="margin-bottom: 15px;">
+                    <label for="problemaTitulo" style="display:block; margin-bottom:5px; font-weight:bold;">Título do Problema:</label>
+                    <input type="text" id="problemaTitulo" name="titulo" required style="width: 95%; padding: 8px; border:1px solid #ccc; border-radius:3px;">
+                </div>
+                <div>
+                    <label for="problemaDescricao" style="display:block; margin-bottom:5px; font-weight:bold;">Descrição Detalhada:</label>
+                    <textarea id="problemaDescricao" name="descricao_problema" rows="4" required style="width: 95%; padding: 8px; border:1px solid #ccc; border-radius:3px;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" style="background-color: #d9534f; color:white; padding: 8px 12px; border:none; border-radius:4px; cursor:pointer;">Enviar Reporte</button>
+                <button type="button" class="close-reportar-modal-btn" style="margin-left:10px; padding: 8px 12px; cursor:pointer;">Cancelar</button>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const maquinasPontos = document.querySelectorAll('.maquina-ponto');
-    const modal = document.getElementById('detalhesModal');
-    const spanClose = modal.querySelector('.close-button');
-
-    const layoutArea = document.getElementById('area-layout');
-    const zoomInButton = document.getElementById('zoom-in');
-    const zoomOutButton = document.getElementById('zoom-out');
-    const zoomResetButton = document.getElementById('zoom-reset');
-    const toggleEdicaoButton = document.getElementById('toggle-edicao-layout'); // Novo botão
-    const statusEdicaoP = document.getElementById('status-edicao'); // Parágrafo de status
-
-    let edicaoLayoutAtiva = false; // Estado da trava de edição
-
-    let currentScale = 1;
-    const scaleStep = 0.1;
-    let currentTranslateX = 0;
-    let currentTranslateY = 0;
-    let isPanningLayout = false;
-    let startLayoutPanX = 0;
-    let startLayoutPanY = 0;
-
-    let activeDraggedItem = null;
-    let initialMouseX, initialMouseY, initialItemX, initialItemY;
-
-    function updateEdicaoStatus() {
-        if (edicaoLayoutAtiva) {
-            toggleEdicaoButton.textContent = 'Desativar Edição do Layout';
-            toggleEdicaoButton.classList.add('ativo');
-            statusEdicaoP.textContent = 'EDIÇÃO ATIVA: Arraste as máquinas para reposicionar.';
-            layoutArea.classList.add('edicao-ativa'); // Adiciona classe para mudar cursor dos itens
-        } else {
-            toggleEdicaoButton.textContent = 'Ativar Edição do Layout';
-            toggleEdicaoButton.classList.remove('ativo');
-            statusEdicaoP.textContent = 'Edição DESATIVADA. Clique nas máquinas para ver detalhes.';
-            layoutArea.classList.remove('edicao-ativa');
-        }
-    }
-    updateEdicaoStatus(); // Define o estado inicial ao carregar
-
-    toggleEdicaoButton.addEventListener('click', function() {
-        edicaoLayoutAtiva = !edicaoLayoutAtiva;
-        updateEdicaoStatus();
-    });
-
-
-    function applyLayoutTransform() { layoutArea.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`; }
-    zoomInButton.addEventListener('click', function() { currentScale += scaleStep; applyLayoutTransform(); });
-    zoomOutButton.addEventListener('click', function() { if (currentScale - scaleStep >= 0.1) { currentScale -= scaleStep; applyLayoutTransform(); } });
-    zoomResetButton.addEventListener('click', function() { currentScale = 1; currentTranslateX = 0; currentTranslateY = 0; applyLayoutTransform(); });
-    layoutArea.addEventListener('wheel', function(event) { event.preventDefault(); const delta = Math.sign(event.deltaY); if (delta < 0) { currentScale += scaleStep; } else { if (currentScale - scaleStep >= 0.1) { currentScale -= scaleStep; } } applyLayoutTransform(); });
-    layoutArea.addEventListener('mousedown', function(event) { if (event.target === layoutArea) { isPanningLayout = true; layoutArea.classList.add('grabbing'); startLayoutPanX = event.clientX - currentTranslateX; startLayoutPanY = event.clientY - currentTranslateY; event.preventDefault(); } });
-
-    document.addEventListener('mousemove', function(event) {
-        if (isPanningLayout) {
-            currentTranslateX = event.clientX - startLayoutPanX;
-            currentTranslateY = event.clientY - startLayoutPanY;
-            applyLayoutTransform();
-        }
-        if (activeDraggedItem && edicaoLayoutAtiva) { // Só move se a edição estiver ativa
-            event.preventDefault();
-            let newX = initialItemX + (event.clientX - initialMouseX) / currentScale;
-            let newY = initialItemY + (event.clientY - initialMouseY) / currentScale;
-            const itemWidth = activeDraggedItem.offsetWidth; const itemHeight = activeDraggedItem.offsetHeight;
-            newX = Math.max(0, Math.min(newX, layoutArea.offsetWidth - itemWidth));
-            newY = Math.max(0, Math.min(newY, layoutArea.offsetHeight - itemHeight));
-            activeDraggedItem.style.left = `${newX}px`; activeDraggedItem.style.top = `${newY}px`;
-        }
-    });
-
-    document.addEventListener('mouseup', function(event) {
-        if (isPanningLayout) { isPanningLayout = false; layoutArea.classList.remove('grabbing'); }
-        if (activeDraggedItem && edicaoLayoutAtiva) { // Só salva se a edição estiver ativa
-            activeDraggedItem.classList.remove('dragging');
-            const maquinaId = activeDraggedItem.dataset.maquinaId;
-            const finalX = parseFloat(activeDraggedItem.style.left);
-            const finalY = parseFloat(activeDraggedItem.style.top);
-            fetch("{% url 'maquinas:atualizar_posicao_maquina' %}", {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}', 'X-Requested-With': 'XMLHttpRequest' },
-                body: JSON.stringify({ id: maquinaId, posicao_x: Math.round(finalX), posicao_y: Math.round(finalY) })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') { console.log('Posição salva:', data.message); }
-                else { console.error('Erro ao salvar posição:', data.message); alert('Erro ao salvar posição: ' + data.message); }
-            })
-            .catch(error => { console.error('Erro na requisição fetch:', error); alert('Erro de comunicação ao salvar posição.'); });
-            activeDraggedItem = null;
-        } else if (activeDraggedItem) { // Se soltou mas a edição não estava ativa, apenas limpa
-             activeDraggedItem.classList.remove('dragging'); // Garante que a classe dragging é removida
-             activeDraggedItem = null;
-        }
-        document.body.style.userSelect = ''; // Restaura user-select
-    });
-
-    maquinasPontos.forEach(maquinaPonto => {
-        let clickPrevented = false;
-        maquinaPonto.addEventListener('mousedown', function(event) {
-            if (event.button !== 0 || isPanningLayout || !edicaoLayoutAtiva) { // Não inicia arraste se não for botão esquerdo, pan do layout ou edição desativada
-                // Se a edição não está ativa, mas foi um clique, permitir que o modal abra
-                if (!edicaoLayoutAtiva && event.button === 0) {
-                    clickPrevented = false; // Assegura que o clique para o modal funcione
-                }
-                return;
-            }
-            activeDraggedItem = this;
-            activeDraggedItem.classList.add('dragging');
-            clickPrevented = false;
-            initialMouseX = event.clientX; initialMouseY = event.clientY;
-            initialItemX = parseFloat(this.style.left); initialItemY = parseFloat(this.style.top);
-            document.body.style.userSelect = 'none';
-            event.preventDefault();
-        });
-        maquinaPonto.addEventListener('mousemove', function() { if (activeDraggedItem === this && edicaoLayoutAtiva) { clickPrevented = true; } });
-        maquinaPonto.addEventListener('click', function (event) {
-            if (clickPrevented && edicaoLayoutAtiva) { // Se foi arraste E a edição estava ativa, não abra o modal
-                event.preventDefault(); clickPrevented = false; return;
-            }
-            // Abrir o modal
-            document.getElementById('modalNomeMaquina').textContent = 'Detalhes: ' + this.dataset.nome;
-            document.getElementById('modalPatrimonio').textContent = this.dataset.nome;
-            document.getElementById('modalMac').textContent = this.dataset.mac;
-            document.getElementById('modalTipo').textContent = this.dataset.tipo;
-            document.getElementById('modalSetor').textContent = this.dataset.setor;
-            document.getElementById('modalUsuario').textContent = this.dataset.usuario;
-            document.getElementById('modalObsHw').textContent = this.dataset.obsHw;
-            document.getElementById('modalIp').textContent = this.dataset.ip;
-            document.getElementById('modalHostname').textContent = this.dataset.hostname;
-            document.getElementById('modalRamal').textContent = this.dataset.ramal;
-            document.getElementById('modalSimo').textContent = this.dataset.simo;
-            document.getElementById('modalLoginSrv').textContent = this.dataset.loginSrv;
-            document.getElementById('modalObsCfg').textContent = this.dataset.obsCfg;
-            modal.style.display = 'block';
-        });
-    });
-
-    spanClose.onclick = function () { modal.style.display = 'none'; }
-    window.onclick = function (event) { if (event.target == modal) { modal.style.display = 'none'; } }
-});
+    // Passar dados do Django para o JavaScript
+    const CSRF_TOKEN = "{{ csrf_token }}";
+    const ATUALIZAR_POSICAO_URL = "{% url 'maquinas:atualizar_posicao_maquina' %}";
+    const LAYOUT_PADRAO_URL = "{% url 'maquinas:layout_empresa_padrao' %}";
+    const CRIAR_CHAMADO_URL = "{% url 'maquinas:chamado_criar' %}";
 </script>
+<script src="{% static 'maquinas/js/layout_interacoes.js' %}"></script>
 {% endblock %}

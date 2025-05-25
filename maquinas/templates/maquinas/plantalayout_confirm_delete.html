@@ -1,0 +1,14 @@
+{% extends "maquinas/base.html" %}
+
+{% block pagina_titulo %}{{ titulo_pagina|default:"Confirmar Exclusão" }}{% endblock %}
+
+{% block conteudo %}
+<p>Você tem certeza que deseja excluir a planta "{{ object.nome }}"?</p>
+<p>Esta ação não pode ser desfeita.</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" style="padding: 8px 15px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor:pointer;">Sim, Excluir</button>
+    <a href="{% url 'maquinas:plantalayout_list' %}" style="margin-left: 10px; color: #6c757d; text-decoration:none;">Cancelar</a>
+</form>
+{% endblock %}

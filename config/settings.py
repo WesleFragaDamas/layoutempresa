@@ -30,15 +30,24 @@ ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_STRING.split(',')]
 
 # Application definition
 
+# config/settings.py
 INSTALLED_APPS = [
+    # ... outras apps ...
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'maquinas.apps.MaquinasConfig', # Ou apenas 'maquinas'
+    'maquinas.apps.MaquinasConfig', # Sua app
+    'crispy_forms',                 # Adicione esta linha
+    'crispy_bootstrap5',            # Adicione esta se instalou o template pack para Bootstrap 5
+    'django_filters',
 ]
+
+# Adicione também no final do settings.py a configuração do template pack:
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_DEFAULT_TEMPLATE_PACK = "bootstrap5"
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -133,3 +142,20 @@ LOGIN_URL = '/login/'  # Ou você pode usar o nome da URL: LOGIN_URL = 'login'
 # Opcionalmente, mas bom para consistência:
 LOGOUT_REDIRECT_URL = '/' # Para onde redirecionar após o logout (ex: página inicial, que redireciona para o layout)
 LOGIN_REDIRECT_URL = '/'  # Para onde redirecionar após o login se não houver 'next' (ex: página inicial)
+
+# ... (outras configurações no seu settings.py) ...
+
+# Configurações para Arquivos de Mídia (Uploads de Usuário, como imagens de planta baixa)
+# ------------------------------------------------------------------------------
+# URL base para servir arquivos de mídia. Usado no template: {{ object.image_field.url }}
+# Exemplo: http://localhost:8000/media/minha_imagem.jpg
+MEDIA_URL = '/media/'
+
+# Caminho absoluto no sistema de arquivos para o diretório onde os arquivos de mídia
+# enviados pelos usuários serão armazenados.
+# Certifique-se de que esta pasta tenha permissões de escrita para o usuário
+# que está rodando sua aplicação Django.
+# BASE_DIR já deve estar definido no topo do seu settings.py
+MEDIA_ROOT = BASE_DIR / 'mediafiles' # Cria uma pasta 'mediafiles' na raiz do projeto
+
+# ... (outras configurações no final do seu settings.py, como LOGIN_URL) ...

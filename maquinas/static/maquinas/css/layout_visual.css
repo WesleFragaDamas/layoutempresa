@@ -1,0 +1,325 @@
+/* Estilos para o layout visual */
+#area-layout-container {
+    width: 100%;
+    max-width: 1600px;
+    margin: 20px auto;
+    overflow: hidden;
+    border: 1px dashed #ccc;
+    position: relative;
+}
+
+#area-layout {
+    /* width e height são definidos inline no HTML com base na planta */
+    /* background-image também é definido inline no HTML se houver planta */
+    border: 2px solid #666;
+    position: relative;
+    background-color: #e9e9e9; /* Cor de fundo padrão */
+    /* Grade visível como fallback ou se não houver imagem de planta */
+    background-image: linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px);
+    background-size: 20px 20px; /* Tamanho da grade de fallback */
+    transform-origin: 0 0;
+    transition: transform 0.2s ease-out;
+    cursor: grab;
+}
+
+#area-layout.grabbing {
+    cursor: grabbing;
+}
+
+/* Estilo base para todos os pontos de máquina */
+.maquina-ponto {
+    width: 80px;
+    height: 50px;
+    /* Cor de fundo e borda padrão para tipo desconhecido ou não estilizado */
+    background-color: rgba(200, 200, 200, 0.85); /* Cinza claro */
+    border: 1px solid #888; /* Borda cinza */
+    border-radius: 5px;
+    position: absolute;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 0.8em;
+    padding: 5px;
+    box-sizing: border-box;
+    overflow: hidden;
+    z-index: 1;
+    user-select: none;
+    transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s; /* Suaviza transições */
+}
+
+#area-layout.edicao-ativa .maquina-ponto {
+    cursor: grab;
+}
+
+.maquina-ponto.dragging {
+    cursor: grabbing !important;
+    opacity: 0.7;
+    z-index: 1000;
+    box-shadow: 0 0 15px rgba(0,0,0,0.3);
+}
+
+/* Hover genérico (pode ser sobrescrito por hovers específicos de tipo) */
+.maquina-ponto:hover:not(.dragging) {
+    box-shadow: 0 0 10px rgba(0,0,0,0.4);
+    z-index: 10;
+}
+
+/* Estilos específicos por tipo de equipamento */
+/* Lembre-se que 'slugify' transforma "Desktop PC" em "desktop-pc" */
+
+.maquina-ponto.tipo-desktop,
+.maquina-ponto.tipo-desktop-pc {
+    background-color: rgba(173, 216, 230, 0.9); /* Azul claro */
+    border-color: #007bff; /* Azul primário */
+}
+.maquina-ponto.tipo-desktop:hover:not(.dragging),
+.maquina-ponto.tipo-desktop-pc:hover:not(.dragging) {
+    background-color: rgba(135, 206, 250, 0.95); /* Azul mais claro no hover */
+}
+
+.maquina-ponto.tipo-notebook,
+.maquina-ponto.tipo-laptop {
+    background-color: rgba(144, 238, 144, 0.9); /* Verde claro */
+    border-color: #28a745; /* Verde sucesso */
+}
+.maquina-ponto.tipo-notebook:hover:not(.dragging),
+.maquina-ponto.tipo-laptop:hover:not(.dragging) {
+    background-color: rgba(120, 220, 120, 0.95);
+}
+
+.maquina-ponto.tipo-impressora,
+.maquina-ponto.tipo-impressora-multifuncional {
+    background-color: rgba(255, 228, 181, 0.9); /* Bege (Moccasin) */
+    border-color: #ffc107; /* Âmbar/Amarelo */
+}
+.maquina-ponto.tipo-impressora:hover:not(.dragging),
+.maquina-ponto.tipo-impressora-multifuncional:hover:not(.dragging) {
+    background-color: rgba(255, 218, 160, 0.95);
+}
+
+.maquina-ponto.tipo-servidor {
+    background-color: rgba(170, 170, 170, 0.9); /* Cinza mais escuro */
+    border-color: #343a40; /* Cinza bem escuro */
+    /* Exemplo de forma diferente:
+    border-radius: 0;
+    border-width: 2px; */
+}
+
+.maquina-ponto.tipo-servidor:hover:not(.dragging) {
+    background-color: rgba(150, 150, 150, 0.95);
+}
+
+/* Tipo padrão/desconhecido já está coberto pelo estilo base de .maquina-ponto */
+/* .maquina-ponto.tipo-desconhecido { ... } */
+
+
+.maquina-ponto .nome-maquina {
+    font-weight: bold;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    color: #000;
+    text-shadow: 0px 0px 1px #fff, 0px 0px 1px #fff;
+}
+
+.maquina-ponto .ip-maquina {
+    font-size: 0.9em;
+    color: #111;
+    text-shadow: 0px 0px 1px #fff, 0px 0px 1px #fff;
+}
+
+/* Controles de Layout, Zoom, Linhas Guia, Indicador de Salvando, Modal (sem alterações significativas aqui) */
+.layout-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 4px;}
+
+.layout-controls label {
+    margin-right: 5px;
+    font-weight: bold;}
+
+.layout-controls select,
+
+.layout-controls button,
+
+.layout-controls input[type="checkbox"] {
+    margin-right: 15px;
+    padding: 5px 8px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    vertical-align: middle;}
+
+.layout-controls input[type="checkbox"] {
+    padding: 0;
+    height: auto; }
+
+.zoom-controls {
+    display: flex;
+    align-items: center;}
+
+#toggle-edicao-layout.ativo {
+    background-color: #d9534f;
+    color: white;
+    border-color: #d43f3a;}
+
+.guide-line {
+    position: absolute;
+    background-color: rgba(255, 0, 0, 0.6);
+    display: none;
+    z-index: 5; }
+
+.horizontal-guide {
+    width: 100%;
+    height: 1px;
+    left: 0; }
+
+.vertical-guide {
+    width: 1px;
+    height: 100%;
+    top: 0; }
+
+#saving-indicator {
+    display: none;
+    position: fixed; /* MUDADO para fixed */
+    top: 15px;
+    right: 20px;
+    /* left: 50%; transform: translateX(-50%); REMOVIDO */
+    background-color: rgba(0, 0, 0, 0.75);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 5px;
+    z-index: 10001;
+    font-size: 0.9em;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* Adiciona uma pequena sombra */
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.6); }
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 60%;
+    max-width: 600px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19); }
+
+.modal-header {
+    padding: 10px 16px;
+    background-color: #5cb85c;
+    color: white;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px; }
+
+.modal-header h2 {
+    margin: 0; }
+
+.modal-body {
+    padding: 15px 16px; }
+
+.modal-body p {
+    margin: 10px 0; }
+
+.modal-body strong {
+    color: #337ab7; }
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold; }
+.close-button:hover,
+
+.close-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer; }
+
+/* --- ESTILOS POR TIPO DE EQUIPAMENTO (AJUSTAR NOMES DAS CLASSES) --- */
+
+.maquina-ponto.tipo-desktop { /* Era tipo-desktop ou tipo-desktop-pc */
+    background-color: rgba(173, 216, 230, 0.9);
+    border-color: #007bff;
+}
+.maquina-ponto.tipo-desktop:hover:not(.dragging) {
+    background-color: rgba(135, 206, 250, 0.95);
+}
+
+.maquina-ponto.tipo-notebook { /* Era tipo-notebook ou tipo-laptop */
+    background-color: rgba(144, 238, 144, 0.9);
+    border-color: #28a745;
+}
+.maquina-ponto.tipo-notebook:hover:not(.dragging) {
+    background-color: rgba(120, 220, 120, 0.95);
+}
+
+.maquina-ponto.tipo-impressora { /* Era tipo-impressora ou tipo-impressora-multifuncional */
+    background-color: rgba(255, 228, 181, 0.9);
+    border-color: #ffc107;
+}
+.maquina-ponto.tipo-impressora:hover:not(.dragging) {
+    background-color: rgba(255, 218, 160, 0.95);
+}
+
+.maquina-ponto.tipo-servidor {
+    background-color: rgba(170, 170, 170, 0.9);
+    border-color: #343a40;
+}
+ .maquina-ponto.tipo-servidor:hover:not(.dragging) {
+    background-color: rgba(150, 150, 150, 0.95);
+}
+
+/* Adicione estilos para as novas escolhas se desejar cores diferentes */
+.maquina-ponto.tipo-roteador {
+    background-color: rgba(255, 165, 0, 0.85);
+    border-color: orange; } /* Laranja */
+.maquina-ponto.tipo-switch {
+    background-color: rgba(128, 0, 128, 0.85);
+    border-color: purple; } /* Roxo */
+.maquina-ponto.tipo-telefone-ip {
+    background-color: rgba(0, 128, 128, 0.85);
+    border-color: teal; } /* Verde Azulado */
+.maquina-ponto.tipo-outro {
+    background-color: rgba(245, 245, 220, 0.85);
+    border-color: beige; } /* Bege para 'Outro' */
+
+.maquina-ponto.com-alerta {
+    border: 2px solid #d9534f; /* Borda vermelha de alerta */
+    box-shadow: 0 0 8px rgba(217, 83, 79, 0.7); /* Sombra vermelha suave */
+}
+
+.maquina-ponto .alerta-icone {
+    position: absolute;
+    top: 1px;
+    right: 3px;
+    font-size: 1.1em; /* Tamanho do ícone de alerta */
+    color: #d9534f;  /* Cor do ícone de alerta */
+    /* Se usar Font Awesome, ajuste o estilo para o <i> tag */
+}
+
+/* Estilo para o rodapé do modal se não existir */
+.modal-footer {
+    padding: 10px 16px;
+    text-align: right;
+    border-top: 1px solid #e5e5e5;
+}
