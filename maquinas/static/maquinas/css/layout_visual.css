@@ -323,3 +323,20 @@
     text-align: right;
     border-top: 1px solid #e5e5e5;
 }
+
+/* Estilo estatus da rede */
+.maquina-ponto.status-online {
+    /* Exemplo: uma pequena borda verde ou um brilho */
+    box-shadow: 0 0 8px 3px rgba(76, 175, 80, 0.7); /* Verde */
+}
+
+.maquina-ponto.status-offline {
+    /* Exemplo: uma pequena borda vermelha ou um brilho */
+    box-shadow: 0 0 8px 3px rgba(244, 67, 54, 0.7); /* Vermelho */
+    opacity: 0.8; /* Opcional: deixar um pouco mais opaco */
+}
+
+.maquina-ponto.status-desconhecido {
+    /* Exemplo: uma pequena borda amarela ou um brilho */
+    box-shadow: 0 0 8px 3px rgba(255, 235, 59, 0.7); /* Amarelo */
+}

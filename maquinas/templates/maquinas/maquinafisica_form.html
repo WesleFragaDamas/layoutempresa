@@ -1,38 +1,40 @@
 {% extends "maquinas/base.html" %}
-{% load crispy_forms_tags %} {# Ou remova se não estiver usando crispy-forms #}
+{% load crispy_forms_tags %}
 
 {% block pagina_titulo %}{{ titulo_formulario|default:"Formulário de Máquina" }}{% endblock %}
 
 {% block conteudo %}
-<form method="post" enctype="multipart/form-data"> {# enctype é para o caso de ter ImageField no futuro, mas não tem
-    agora #}
-    {% csrf_token %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <h3>{{ titulo_formulario|default:"Formulário" }}</h3>
+        {% if object %}
+            <p class="text-muted">Editando: <strong>{{ object.nome_patrimonio }}</strong></p>
+        {% endif %}
+        <hr>
 
-    {# Se usar crispy-forms: #}
-    {# {{ form|crispy }} #}
-
-    {# Se NÃO usar crispy-forms: #}
-    {{ form.as_p }}
-
-    <div style="margin-top: 20px;">
-        <button type="submit"
-                style="padding: 8px 15px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor:pointer;">
-            Salvar
-        </button>
-        <a href="{% url 'maquinas:maquinafisica_list' %}"
-           style="margin-left: 10px; color: #6c757d; text-decoration:none;">Cancelar</a>
+        <form method="post" enctype="multipart/form-data" id="maquina-form">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <div class="mt-4 d-grid gap-2 d-md-flex justify-content-md-start">
+                <button type="submit" id="submit-button-maquina" class="btn btn-success btn-lg">
+                    Salvar
+                </button>
+                <a href="{% url 'maquinas:maquinafisica_list' %}" class="btn btn-secondary btn-lg">
+                    Cancelar
+                </a>
+            </div>
+        </form>
     </div>
-</form>
+</div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('maquina-form');
-        const submitButton = document.getElementById('submit-button-maquina'); // ID diferente se necessário
-
+        const submitButton = document.getElementById('submit-button-maquina');
         if (form && submitButton) {
-            form.addEventListener('submit', function () {
+            form.addEventListener('submit', function() {
                 submitButton.disabled = true;
-                submitButton.textContent = 'Salvando...';
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...';
             });
         }
     });

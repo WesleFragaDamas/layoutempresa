@@ -1,43 +1,41 @@
 {% extends "maquinas/base.html" %}
-{% load crispy_forms_tags %} {# Se você for usar crispy-forms para estilizar formulários, senão, remova esta linha #}
+{% load crispy_forms_tags %}
 
 {% block pagina_titulo %}{{ titulo_formulario|default:"Formulário de Planta" }}{% endblock %}
 
 {% block conteudo %}
-<form method="post" enctype="multipart/form-data"> {# enctype é essencial para upload de arquivos #}
-    {% csrf_token %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <h3>{{ titulo_formulario|default:"Formulário" }}</h3>
+        {% if object %} {# 'object' está disponível em UpdateViews #}
+            <p class="text-muted">Editando: <strong>{{ object }}</strong></p>
+        {% endif %}
+        <hr>
 
-    {# Se usar crispy-forms: #}
-    {# {{ form|crispy }} #}
-
-    {# Se NÃO usar crispy-forms, renderize manualmente ou com form.as_p / form.as_table: #}
-    {{ form.as_p }}
-
-    <div style="margin-top: 20px;">
-        <button type="submit" style="padding: 8px 15px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor:pointer;">Salvar</button>
-        <a href="{% url 'maquinas:plantalayout_list' %}" style="margin-left: 10px; color: #6c757d; text-decoration:none;">Cancelar</a>
+        <form method="post" enctype="multipart/form-data" id="planta-form">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <div class="mt-4 d-grid gap-2 d-md-flex justify-content-md-start"> {# Botões Bootstrap #}
+                <button type="submit" id="submit-button-planta" class="btn btn-success btn-lg">
+                    Salvar
+                </button>
+                <a href="{% url 'maquinas:plantalayout_list' %}" class="btn btn-secondary btn-lg">
+                    Cancelar
+                </a>
+            </div>
+        </form>
     </div>
-</form>
+</div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const form = document.getElementById('planta-form'); // Usa o ID do formulário
-        const submitButton = document.getElementById('submit-button'); // Adicione um ID ao botão se necessário, ou selecione por classe
+        const form = document.getElementById('planta-form');
+        const submitButton = document.getElementById('submit-button-planta');
 
         if (form && submitButton) {
             form.addEventListener('submit', function() {
-                // Desabilita o botão para prevenir múltiplos envios
                 submitButton.disabled = true;
-                // Muda o texto do botão para indicar processamento
-                submitButton.textContent = 'Salvando...';
-                // Se você tivesse um spinner:
-                // submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...';
-
-                // O formulário será enviado normalmente. Se houver erros de validação no backend,
-                // a página será recarregada com os erros, e o botão estará habilitado novamente
-                // porque o JavaScript é recarregado.
-                // Se você quisesse reabilitar via JS em caso de erro AJAX (não é o caso aqui com submit padrão),
-                // precisaria de mais lógica.
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...';
             });
         }
     });

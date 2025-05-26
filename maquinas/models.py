@@ -241,6 +241,17 @@ class ConfiguracaoRede(models.Model):
         blank=True,
         null=True
     )
+    ultimo_status_online = models.BooleanField(
+        _("Último Status Online"),
+        null=True,  # Pode não ter sido verificado ainda
+        blank=True,
+        default=None  # Ou False se preferir
+    )
+    data_ultima_verificacao_status = models.DateTimeField(
+        _("Data da Última Verificação de Status"),
+        null=True,
+        blank=True
+    )
 
     def __str__(self):
         status = "Ativo" if self.ativo else "Inativo"

@@ -105,6 +105,13 @@
             <p><strong>Usuário Resp.:</strong> <span id="modalUsuario"></span></p>
             <p><strong>Obs. Hardware:</strong> <pre id="modalObsHw" style="white-space: pre-wrap; word-wrap: break-word;"></pre></p>
             <hr><h4>Configuração de Rede Ativa:</h4>
+            <hr>
+            <div id="status-maquina-info" style="margin-top:10px;">
+                <p><strong>Status da Rede:</strong> <span id="modalStatusRede">Verificando...</span>
+                   <button id="btn-verificar-status" data-maquina-id="" style="margin-left:10px; padding: 3px 8px; font-size:0.8em;">Verificar Agora</button>
+                </p>
+                <p style="font-size:0.8em; color:gray;">Última verificação: <span id="modalUltimaVerificacaoStatus">Nunca</span></p>
+            </div>
             <p><strong>IP Address:</strong> <span id="modalIp"></span></p>
             <p><strong>Hostname Rede:</strong> <span id="modalHostname"></span></p>
             <p><strong>Ramal:</strong> <span id="modalRamal"></span></p>
@@ -155,6 +162,8 @@
     const ATUALIZAR_POSICAO_URL = "{% url 'maquinas:atualizar_posicao_maquina' %}";
     const LAYOUT_PADRAO_URL = "{% url 'maquinas:layout_empresa_padrao' %}";
     const CRIAR_CHAMADO_URL = "{% url 'maquinas:chamado_criar' %}";
+    const VERIFICAR_STATUS_URL_BASE = "/app/maquina/"; // Base da URL, o ID será adicionado
+
 </script>
 <script src="{% static 'maquinas/js/layout_interacoes.js' %}"></script>
 {% endblock %}

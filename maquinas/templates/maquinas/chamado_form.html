@@ -1,41 +1,49 @@
 {% extends "maquinas/base.html" %}
-{% load crispy_forms_tags %} {# Ou remova se não usar crispy #}
+{% load crispy_forms_tags %}
 
 {% block pagina_titulo %}{{ titulo_formulario|default:"Gerenciar Chamado" }}{% endblock %}
 
 {% block conteudo %}
-<h3>{{ titulo_formulario }}</h3>
-<hr>
-<p><strong>Máquina:</strong> {{ chamado.maquina_fisica.nome_patrimonio }} (Planta: {{ chamado.maquina_fisica.planta_layout.nome|default:"N/A" }})</p>
-<p><strong>Reportado por:</strong> {{ chamado.usuario_reportou.username|default:"Sistema" }} em {{ chamado.data_abertura|date:"d/m/Y H:i" }}</p>
-<hr>
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <h3>{{ titulo_formulario }}</h3>
+        <hr>
+        <div class="mb-3 p-3 bg-light border rounded">
+            <h5 class="mb-1">Detalhes da Máquina:</h5>
+            <p class="mb-1"><strong>Patrimônio:</strong> {{ chamado.maquina_fisica.nome_patrimonio }}</p>
+            <p class="mb-1"><strong>Planta:</strong> {{ chamado.maquina_fisica.planta_layout.nome|default:"N/A" }}</p>
+            <p class="mb-0"><strong>Tipo:</strong> {{ chamado.maquina_fisica.tipo_equipamento|default:"N/A" }}</p>
+        </div>
+         <div class="mb-3 p-3 bg-light border rounded">
+            <h5 class="mb-1">Informações do Chamado:</h5>
+            <p class="mb-1"><strong>Reportado por:</strong> {{ chamado.usuario_reportou.username|default:"Sistema" }}</p>
+            <p class="mb-0"><strong>Aberto em:</strong> {{ chamado.data_abertura|date:"d/m/Y H:i" }}</p>
+        </div>
+        <hr>
 
-<form method="post" id="chamado-form"> {# enctype não é necessário se não houver upload de arquivo #}
-    {% csrf_token %}
-
-    {# Se usar crispy-forms: #}
-    {# {{ form|crispy }} #}
-
-    {# Se NÃO usar crispy-forms: #}
-    {{ form.as_p }}
-
-    <div style="margin-top: 20px;">
-        <button type="submit" id="submit-button-chamado" class="btn-salvar" style="padding: 8px 15px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor:pointer;">
-            Salvar Alterações
-        </button>
-        <a href="{% url 'maquinas:chamado_list' %}" style="margin-left: 10px; color: #6c757d; text-decoration:none;">Cancelar</a>
+        <form method="post" id="chamado-form">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <div class="mt-4 d-grid gap-2 d-md-flex justify-content-md-start">
+                <button type="submit" id="submit-button-chamado" class="btn btn-success btn-lg">
+                    Salvar Alterações
+                </button>
+                <a href="{% url 'maquinas:chamado_list' %}" class="btn btn-secondary btn-lg">
+                    Cancelar
+                </a>
+            </div>
+        </form>
     </div>
-</form>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('chamado-form');
     const submitButton = document.getElementById('submit-button-chamado');
-
     if (form && submitButton) {
         form.addEventListener('submit', function() {
             submitButton.disabled = true;
-            submitButton.textContent = 'Salvando...';
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...';
         });
     }
 });

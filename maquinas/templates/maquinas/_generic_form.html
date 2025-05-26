@@ -1,0 +1,72 @@
+{% extends "maquinas/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %} {# Adicionado para o caso de precisar de estáticos aqui no futuro #}
+
+{% block pagina_titulo %}{{ view_title|default:"Formulário" }}{% endblock %}
+
+{% block conteudo %}
+<div class="container mt-4"> {# Container do Bootstrap para espaçamento #}
+    <div class="row">
+        <div class="col-md-8 offset-md-2"> {# Colunas Bootstrap para centralizar e limitar largura #}
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">{{ view_title|default:"Formulário" }}</h3>
+                </div>
+                <div class="card-body">
+                    {% if form_pre_content_html %}
+                        <div class="mb-3 p-3 bg-light border rounded">
+                            {{ form_pre_content_html|safe }}
+                        </div>
+                        <hr>
+                    {% elif object and object_display_info %} {# Se for uma UpdateView e passarmos informações do objeto #}
+                        <div class="mb-3 p-3 bg-light border rounded">
+                            {{ object_display_info|safe }}
+                        </div>
+                        <hr>
+                    {% elif object %}
+                         <p class="text-muted">Editando: <strong>{{ object }}</strong></p>
+                         <hr>
+                    {% endif %}
+
+                    <form method="post" enctype="multipart/form-data" id="{{ form_id|default:'generic-form' }}">
+                        {% csrf_token %}
+
+                        {{ form|crispy }}
+
+                        <div class="mt-4">
+                            <button type="submit" id="submit-button-{{ form_id|default:'generic' }}" class="btn btn-success btn-lg me-2">
+                                {{ submit_button_text|default:"Salvar" }}
+                            </button>
+                            <a href="{{ cancel_url }}" class="btn btn-secondary btn-lg">
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('{{ form_id|default:'generic-form' }}');
+        const submitButton = document.getElementById('submit-button-{{ form_id|default:'generic' }}');
+
+        if (form && submitButton) {
+            form.addEventListener('submit', function() {
+                // Verifica se o formulário é válido do lado do cliente (para campos required HTML5)
+                if (form.checkValidity && !form.checkValidity()) {
+                    // Se o formulário não for válido, não desabilita o botão nem mostra "Salvando..."
+                    // O navegador mostrará as mensagens de validação HTML5.
+                    return;
+                }
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...';
+            });
+        }
+    });
+</script>
+{% endblock %}
